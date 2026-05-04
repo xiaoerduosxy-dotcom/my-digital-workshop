@@ -39,3 +39,18 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 个人隐私文件 / 草稿文件（不上传 GitHub）
+Jerry_个人信息全档案.md
+简历.md
+个人建站复盘.md
+商曦匀-AI产品经理.md
+商曦匀-AI产品经理.html
+个人简历.html
+整体框架.html
+特效.html
+电脑效果.html
+色调和字体.html
+行业洞察模块效果.html
+更透版作品集封面-人物.png
+1.html
