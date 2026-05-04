@@ -67,7 +67,6 @@ body {
 /* ─── Bento 3D 动效 ─── */
 .bento-grid {
   perspective: 2500px;
-  transform-style: preserve-3d;
 }
 
 .bento-card {
