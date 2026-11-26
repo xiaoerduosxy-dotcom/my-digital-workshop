@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { type FormEvent, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { finishDemoQuestion, getConversation, getServerConversation, parseConversation, queueQuestion, retryQuestion, subscribeConversation, SUGGESTED_QUESTIONS } from '@/lib/ask-jerry';
+import { finishQuestion, getConversation, getServerConversation, parseConversation, queueQuestion, retryQuestion, subscribeConversation, SUGGESTED_QUESTIONS, type AskDecision } from '@/lib/ask-jerry';
 import AskJerryComposer from './AskJerryComposer';
 import AskJerryDots from './AskJerryDots';
 
@@ -12,15 +12,43 @@ export default function AskJerryChat() {
   const snapshot = useSyncExternalStore(subscribeConversation, getConversation, getServerConversation);
   const turns = useMemo(() => parseConversation(snapshot), [snapshot]);
   const pending = turns.find((turn) => turn.status === 'pending');
+  const previous = pending ? turns[turns.indexOf(pending) - 1] : undefined;
+  const previousTopic = previous?.status === 'ready' ? previous.topic : undefined;
   const [question, setQuestion] = useState('');
   const transcript = useRef<HTMLDivElement>(null);
   const scrollOnUpdate = useRef(true);
 
   useEffect(() => {
     if (!pending) return;
-    const timer = window.setTimeout(() => finishDemoQuestion(pending.id, pending.attempt), 650);
-    return () => window.clearTimeout(timer);
-  }, [pending]);
+    if (pending.simulateFailure) {
+      const timer = window.setTimeout(() => finishQuestion(pending.id, pending.attempt, pending.attempt > 0 ? {
+        intent: 'capabilities', reply: { text: '重试成功。一切正常，你可以继续体验提问。' },
+      } : undefined), 650);
+      return () => window.clearTimeout(timer);
+    }
+
+    const controller = new AbortController();
+    async function answer(turn: NonNullable<typeof pending>) {
+      try {
+        const response = await fetch('/api/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: turn.question, topic: previousTopic }),
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error('Ask Jerry request failed');
+        const { reply, intent, topic }: AskDecision = await response.json();
+        if (!controller.signal.aborted) finishQuestion(turn.id, turn.attempt, { reply, intent, topic });
+      } catch {
+        if (!controller.signal.aborted) finishQuestion(turn.id, turn.attempt);
+      }
+    }
+    const timer = window.setTimeout(() => void answer(pending), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [pending, previousTopic]);
 
   useEffect(() => {
     const area = transcript.current;
@@ -43,7 +71,7 @@ export default function AskJerryChat() {
       <header className={`flex shrink-0 items-center justify-between gap-3 overflow-y-hidden pb-2 pt-4 lg:pb-3 lg:pt-6 ${GUTTER}`}>
         <div>
           <h1 className="font-serif text-xl font-bold leading-tight text-[#4b5064] lg:text-2xl">问问 Jerry</h1>
-          <p className="mt-1 text-xs leading-relaxed text-[#64697c]">网站助手 · 演示回复，暂未接入 AI</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#64697c]">网站助手 · 分类演示</p>
         </div>
         <Link href="/" className="hidden min-h-11 shrink-0 items-center gap-1.5 text-xs font-medium text-[#5e4f74] underline-offset-4 hover:underline lg:inline-flex"><span aria-hidden="true">←</span>返回首页</Link>
       </header>
@@ -76,7 +104,7 @@ export default function AskJerryChat() {
                 <p className="sr-only">你的提问</p>
                 <p className="rounded-2xl rounded-br-md bg-[#e5ddec] px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-[#4e465c] [overflow-wrap:anywhere]">{turn.question}</p>
               </div>
-              <div data-message="reply" className="max-w-[92%] self-start rounded-2xl rounded-tl-md bg-white/53 px-3.5 py-2.5 text-[#51566b] sm:max-w-[min(78%,34rem)]">
+              <div data-message="reply" data-intent={turn.status === 'ready' ? turn.intent : undefined} className="max-w-[92%] self-start rounded-2xl rounded-tl-md bg-white/53 px-3.5 py-2.5 text-[#51566b] sm:max-w-[min(78%,34rem)]">
                 <p className="mb-1 text-[11px] font-medium text-[#625773]">Jerry 的网站助手</p>
                 {turn.status === 'ready' ? (
                   <>
@@ -85,11 +113,11 @@ export default function AskJerryChat() {
                   </>
                 ) : turn.status === 'failed' ? (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                    <p className="text-[#802f49]">这次没收到回复（模拟）。</p>
+                    <p className="text-[#802f49]">{turn.simulateFailure ? '这次没收到回复（模拟）。' : '这次没收到回复，可以重试。'}</p>
                     <button type="button" disabled={Boolean(pending)} onClick={() => { scrollOnUpdate.current = true; retryQuestion(turn.id); }} className="py-1 font-medium text-[#5e4f74] underline underline-offset-4 disabled:opacity-50">重试</button>
                   </div>
                 ) : (
-                  <p className="flex items-center gap-2.5 text-sm text-[#5f6275]"><AskJerryDots compact active />正在准备演示回复</p>
+                  <p className="flex items-center gap-2.5 text-sm text-[#5f6275]"><AskJerryDots compact active />正在准备回复</p>
                 )}
               </div>
             </div>
