@@ -1,215 +1,165 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-const MODES = ['neutral', 'think', 'listen', 'alert'] as const;
-type Mode = typeof MODES[number];
+type Pixel = { x: number; y: number; phase: number; glow: number };
 
-const MODE_LABELS: Record<Mode, string> = {
-  neutral: '输入',
-  think: '实干',
-  listen: '复盘',
-  alert: '休眠',
-};
+const GOLD_LEVELS = [0.13, 0.28, 0.55, 0.9] as const;
 
-export default function DotMatrixWidget({ className = '' }: { className?: string }) {
+function soften(value: number) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
+}
+
+export default function DotMatrixWidget() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<Mode>('think');
-  const [coord, setCoord] = useState('00,00');
-  const modeRef = useRef<Mode>('think');
-  const frameRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
-  const colsRef = useRef(0);
-  const rowsRef = useRef(0);
-
-  useEffect(() => {
-    modeRef.current = mode;
-  }, [mode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
-    if (!canvas || !container) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !container || !ctx) return;
 
-    const DOT_SPACING = 13;
-    const DOT_SIZE = 3.8;
-    const BG = '#e6e8ef';
-    const DOT_DIM = '#cdd1e0';
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let pixels: Pixel[] = [];
+    let width = 0;
+    let height = 0;
+    let frame = 0;
+    let lastDraw = -Infinity;
+    let visible = true;
+
+    function draw(time: number) {
+      if (!ctx || !width || !height) return;
+      ctx.clearRect(0, 0, width, height);
+
+      const groups: Pixel[][] = GOLD_LEVELS.map(() => []);
+      ctx.beginPath();
+      for (const pixel of pixels) {
+        const { x, y, phase, glow } = pixel;
+        ctx.moveTo(x + 0.85, y);
+        ctx.arc(x, y, 0.85, 0, Math.PI * 2);
+        const wave = Math.sin(phase - time);
+        const light = glow * (wave > 0.79 ? 1 : wave > 0.4 ? 0.29 : 0);
+        if (light >= 0.07) {
+          const band = light > 0.68 ? 3 : light > 0.4 ? 2 : light > 0.2 ? 1 : 0;
+          groups[band].push(pixel);
+        }
+      }
+      ctx.fillStyle = 'rgba(158, 146, 185, .22)';
+      ctx.fill();
+
+      function rings(group: Pixel[], alpha: number) {
+        if (!ctx) return;
+        ctx.beginPath();
+        for (const { x, y } of group) {
+          ctx.moveTo(x + 3.8, y);
+          ctx.arc(x, y, 3.8, 0, Math.PI * 2);
+        }
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(255, 203, 0, ${alpha})`;
+        ctx.shadowBlur = alpha > 0.8 ? 5 : 0;
+        ctx.shadowColor = 'rgba(255, 203, 0, .5)';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        for (const { x, y } of group) {
+          ctx.moveTo(x + 0.75, y);
+          ctx.arc(x, y, 0.75, 0, Math.PI * 2);
+        }
+        ctx.fillStyle = `rgba(255, 203, 0, ${alpha * 0.65})`;
+        ctx.fill();
+      }
+
+      groups.forEach((group, index) => {
+        if (group.length) rings(group, GOLD_LEVELS[index]);
+      });
+    }
+
+    function tick(now: number) {
+      frame = 0;
+      if (!visible || reducedMotion.matches) return;
+      if (now - lastDraw >= 29) {
+        // Same three-arm spiral as the original “实干” mode, at a stable speed.
+        draw(now * 0.0055);
+        lastDraw = now;
+      }
+      frame = window.requestAnimationFrame(tick);
+    }
+
+    function syncMotion() {
+      window.cancelAnimationFrame(frame);
+      frame = 0;
+      if (reducedMotion.matches) draw(0.9);
+      else if (visible) frame = window.requestAnimationFrame(tick);
+    }
 
     function resize() {
-      const w = container!.clientWidth;
-      const h = container!.clientHeight;
-      canvas!.width = w;
-      canvas!.height = h;
-      colsRef.current = Math.floor(w / DOT_SPACING);
-      rowsRef.current = Math.floor(h / DOT_SPACING);
-    }
-
-    function getIntensity(c: number, r: number, time: number): number {
-      const cols = colsRef.current;
-      const rows = rowsRef.current;
-      if (!cols || !rows) return 0;
-      const x = c / cols;
-      const y = r / rows;
-      const dist = Math.sqrt((x - 0.5) ** 2 + (y - 0.5) ** 2);
-
-      switch (modeRef.current) {
-        case 'neutral': {
-          const pulse = (Math.sin(time * 0.05) + 1) / 2;
-          const ring = Math.abs(dist - pulse * 0.4);
-          return ring < 0.05 ? 1 : ring < 0.1 ? 0.2 : 0;
-        }
-        case 'think': {
-          const angle = Math.atan2(y - 0.5, x - 0.5);
-          const orbit = Math.sin(dist * 20 - time * 0.2 + angle * 3);
-          return orbit > 0.8 ? 1 : orbit > 0.4 ? 0.2 : 0;
-        }
-        case 'listen': {
-          const wave = Math.sin(x * 10 + time * 0.3) * 0.3 + 0.5;
-          return Math.abs(y - wave) < 0.05 ? 1 : 0.1;
-        }
-        case 'alert': {
-          const gridPos = Math.floor(time * 0.2) % 2;
-          return gridPos === 0
-            ? (c % 4 === 0 || r % 4 === 0 ? (Math.random() > 0.5 ? 1 : 0) : 0)
-            : dist < 0.3 ? 1 : 0;
-        }
-        default:
-          return 0;
-      }
-    }
-
-    function draw() {
-      const cols = colsRef.current;
-      const rows = rowsRef.current;
-      if (!canvas || !ctx || !cols || !rows) {
-        rafRef.current = requestAnimationFrame(draw);
-        return;
-      }
-
-      ctx.fillStyle = BG;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      const time = frameRef.current++;
-
-      for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-          const x = i * DOT_SPACING + DOT_SPACING / 2;
-          const y = j * DOT_SPACING + DOT_SPACING / 2;
-          const intensity = getIntensity(i, j, time);
-
-          // base dot (always visible)
-          ctx.beginPath();
-          ctx.arc(x, y, 1, 0, Math.PI * 2);
-          ctx.fillStyle = DOT_DIM;
-          ctx.fill();
-
-          if (intensity > 0) {
-            if (intensity === 1) {
-              ctx.shadowBlur = 5;
-              ctx.shadowColor = 'rgba(255,203,0,0.5)';
-            }
-            ctx.beginPath();
-            ctx.arc(x, y, DOT_SIZE, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(255,203,0,${intensity})`;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.arc(x, y, 0.6, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255,203,0,${intensity * 0.6})`;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-          }
+      if (!canvas || !container || !ctx) return;
+      width = container.clientWidth;
+      height = container.clientHeight;
+      const resolution = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * resolution);
+      canvas.height = Math.round(height * resolution);
+      ctx.setTransform(resolution, 0, 0, resolution, 0, 0);
+      const spacing = width < 400 ? 11 : 13;
+      const cols = Math.floor(width / spacing);
+      const rows = Math.floor(height / spacing);
+      const insetX = (width - cols * spacing) / 2;
+      const insetY = (height - rows * spacing) / 2;
+      const narrow = width < 460;
+      const scale = Math.max(135, Math.min(height * 1.06, width * 0.48));
+      pixels = [];
+      for (let col = 0; col < cols; col++) {
+        for (let row = 0; row < rows; row++) {
+          const x = insetX + (col + 0.5) * spacing;
+          const y = insetY + (row + 0.5) * spacing;
+          // Place the vivid rings in the upper-right, away from the reading start.
+          const dx = (x - width * 0.83) / scale;
+          const dy = (y - height * 0.23) / scale;
+          const horizontal = soften((x / width - (narrow ? 0.49 : 0.43)) / 0.38);
+          const vertical = 1 - soften((y / height - 0.23) / 0.62);
+          pixels.push({
+            x,
+            y,
+            phase: Math.hypot(dx, dy) * 20 + Math.atan2(dy, dx) * 3,
+            glow: horizontal * vertical * (narrow ? 0.61 : 1),
+          });
         }
       }
-
-      rafRef.current = requestAnimationFrame(draw);
+      draw(reducedMotion.matches ? 0.9 : performance.now() * 0.0055);
     }
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(container);
+    const resizeObserver = new ResizeObserver(resize);
+    const intersectionObserver = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      syncMotion();
+    });
+    resizeObserver.observe(container);
+    intersectionObserver.observe(container);
+    reducedMotion.addEventListener('change', syncMotion);
     resize();
-    draw();
+    syncMotion();
 
     return () => {
-      ro.disconnect();
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+      reducedMotion.removeEventListener('change', syncMotion);
+      window.cancelAnimationFrame(frame);
     };
   }, []);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const mx = Math.floor((e.clientX - rect.left) / 13);
-    const my = Math.floor((e.clientY - rect.top) / 13);
-    setCoord(
-      `${String(mx).padStart(2, '0')},${String(my).padStart(2, '0')}`
-    );
-  };
-
   return (
-    <div className={`neo-inset rounded-2xl overflow-hidden flex flex-col font-mono ${className}`}>
-      {/* ── 顶部元数据栏 ── */}
-      <div className="flex items-center justify-between px-3 pt-2.5 pb-1 text-[8px] uppercase tracking-widest text-[var(--text-sub)]">
-        <span>MODE: DEEP WORK</span>
-        <span className="text-[var(--accent-yellow)]">FOCUSED</span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--accent-yellow)] animate-pulse" />
-          SYNCING
-        </span>
-      </div>
-
-      {/* ── Canvas 点阵区域 ── */}
+    <div
+      ref={containerRef}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+    >
       <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden cursor-crosshair"
-        style={{ minHeight: '130px', position: 'relative' }}
-      >
-        {/* scanline 叠加层 */}
-        <div
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{
-            background:
-              'linear-gradient(rgba(255,255,255,0) 50%, rgba(180,185,200,0.08) 50%)',
-            backgroundSize: '100% 4px',
-          }}
-        />
-        <canvas
-          ref={canvasRef}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-          onMouseMove={handleMouseMove}
-        />
-      </div>
-
-      {/* ── 底部坐标栏 ── */}
-      <div className="px-3 py-1 text-[8px] tracking-widest text-[var(--text-sub)]">
-        ENERGY: HIGH // COGNITIVE LOAD: OPTIMAL // CAPACITY: 85%
-      </div>
-
-      {/* ── 模式切换按钮 ── */}
-      <div className="grid grid-cols-4 border-t border-[var(--shadow-dark)]">
-        {MODES.map((m) => (
-          <button
-            key={m}
-            onClick={() => setMode(m)}
-            className={`relative py-2 text-[8px] uppercase tracking-widest transition-colors ${
-              mode === m
-                ? 'text-[var(--accent-yellow)]'
-                : 'text-[var(--text-sub)] hover:text-[var(--accent-yellow)]'
-            }`}
-          >
-            {MODE_LABELS[m]}
-            {mode === m && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2.5 h-0.5 bg-[var(--accent-yellow)] rounded-full" />
-            )}
-          </button>
-        ))}
-      </div>
+        className="absolute inset-0"
+        style={{ background: 'repeating-linear-gradient(180deg, transparent 0 2px, rgb(152 136 182 / 5%) 2px 4px), radial-gradient(ellipse at 83% 12%, #e4ddf385, #eae9f22e 59%, transparent 83%)' }}
+      />
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
     </div>
   );
 }

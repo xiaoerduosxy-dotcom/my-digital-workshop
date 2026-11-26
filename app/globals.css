@@ -64,6 +64,39 @@ body {
     inset -4px -4px 8px var(--shadow-light);
 }
 
+/* Compact reply indicator, without another panel. */
+.ask-jerry-dots {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  height: 8px;
+  color: #aaa0b9;
+  pointer-events: none;
+}
+
+.ask-jerry-dots > span {
+  width: 2px;
+  background: radial-gradient(circle at center 1px, currentColor 1px, transparent 1.15px),
+    radial-gradient(circle at center 7px, currentColor 1px, transparent 1.15px);
+  transition: color 180ms ease;
+}
+
+.ask-jerry-dots[data-active="true"] {
+  color: #80669f;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ask-jerry-dots[data-active="true"] > span {
+    animation: ask-jerry-dot-sweep 340ms ease-out both;
+  }
+}
+
+@keyframes ask-jerry-dot-sweep {
+  0% { opacity: .45; }
+  40% { opacity: 1; filter: drop-shadow(0 0 2px #a193c3); }
+  100% { opacity: .82; }
+}
+
 /* ─── Bento 3D 动效 ─── */
 .bento-grid {
   perspective: 2500px;

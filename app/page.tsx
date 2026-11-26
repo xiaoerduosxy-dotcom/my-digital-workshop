@@ -1,88 +1,29 @@
 import Link from 'next/link';
+import AskJerryEntry from './components/AskJerryEntry';
 import DotMatrixWidget from './components/DotMatrixWidget';
+import WorkshopSidebar from './components/WorkshopSidebar';
 import { INSIGHTS } from '@/lib/insights';
 
 export default function Home() {
   return (
     <div className="relative min-h-screen bg-[var(--bg-page)] text-[var(--text-main)]">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 p-4 lg:flex-row lg:items-start lg:p-6">
-        <aside className="neo-flat relative flex flex-col w-full rounded-[32px] overflow-hidden lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] lg:w-[360px] lg:flex-shrink-0">
-          {/* 四角螺丝钉装饰 */}
-          <div className="corner-screw tl" />
-          <div className="corner-screw tr" />
-          <div className="corner-screw bl" />
-          <div className="corner-screw br" />
-
-          {/* 照片区域：移动端固定高度 + object-contain 显示完整人物；桌面端 flex-1 铺满 */}
-          <div className="h-[200px] overflow-hidden lg:flex-1 lg:h-auto">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/profile.png"
-              alt="Jerry"
-              className="w-full h-full object-contain object-top select-none lg:object-cover"
-            />
-          </div>
-
-          {/* 姓名与职位：左对齐 */}
-          <div className="px-6 pt-3 pb-2 lg:px-8 lg:pt-4 lg:pb-2">
-            <h1 className="font-serif text-3xl font-black tracking-wide">Jerry.</h1>
-            <p className="mt-1 font-mono text-[11px] tracking-widest text-[var(--text-sub)]">
-              AI PRODUCT MANAGER // BUILDER
-            </p>
-          </div>
-
-          {/* 导航按钮：左对齐，底部留出螺丝钉空间 */}
-          <nav className="space-y-2.5 px-6 pb-10 lg:px-8 lg:pb-12">
-            <Link
-              href="/about"
-              className="neo-inset neo-btn flex items-center justify-between rounded-2xl px-5 py-4 text-sm font-semibold text-[var(--accent-yellow)] transition hover:-translate-y-0.5"
-            >
-              <span>关于我 ABOUT</span>
-              <span aria-hidden>→</span>
-            </Link>
-            <a
-              href="#lab"
-              className="neo-btn flex items-center justify-between rounded-2xl px-5 py-4 text-sm font-semibold transition hover:-translate-y-0.5"
-            >
-              <span>实战实验室 AI LAB</span>
-              <span aria-hidden>→</span>
-            </a>
-            <Link
-              href="/insights"
-              className="neo-btn flex items-center justify-between rounded-2xl px-5 py-4 text-sm font-semibold transition hover:-translate-y-0.5"
-            >
-              <span>行业见解 INSIGHTS</span>
-              <span aria-hidden>→</span>
-            </Link>
-          </nav>
-        </aside>
+        <WorkshopSidebar />
 
         <main className="w-full min-w-0 flex flex-col gap-6">
 
           {/* ── 上半区：about + insights 自然排布 ── */}
           <div className="flex flex-col gap-6">
 
-            <section id="about" className="neo-flat rounded-[32px] p-8 lg:p-10">
-              {/* 桌面端：[h2+段落] 左列 | [widget 正方形] 右列
-                  移动端：垂直堆叠，widget 全宽 */}
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch lg:gap-6">
-                <div className="flex-1 min-w-0">
-                  <h2 className="mb-5 font-serif text-4xl font-black leading-tight lg:text-5xl">
-                    Driven by <span className="text-[var(--accent-yellow)]">Curiosity</span>,
-                    <br />
-                    Grounded in <em>Reality</em>.
-                  </h2>
-                  <div className="space-y-3 text-[15px] leading-relaxed text-[var(--text-sub)]">
-                    <p>Hi，我是 Jerry，欢迎进来坐坐。</p>
-                    <p>在互联网折腾了7年，从C端到B端，从传统产品到AI应用每一步的转型，都不是规划出来的，更多是因为好奇——想弄清楚一个产品更深的那一层是什么。</p>
-                    <p>现在最让我着迷的是把 AI 揉进乱糟糟的真实业务中。不是做个简单的聊天框，而是在有历史包袱的复杂场景里，找到它真正能扛事儿的地方。</p>
-                    <p>日常我会用 Cursor 动手跑 MVP。不为做工程师，只因亲手把想法跑通时，很多纸上谈兵的方案自然就露馅了。</p>
-                    <p>这里是我放思考的地方，欢迎有共鸣的人来畅聊～</p>
-                  </div>
-                </div>
-                {/* 移动端：全宽，min-h-[220px]
-                    桌面端：46% 宽度 + aspect-square → 自动成为正方形 */}
-                <DotMatrixWidget className="w-full min-h-[220px] lg:w-[38%] lg:flex-none" />
+            <section id="about" aria-labelledby="home-intro-title" className="neo-flat relative isolate min-w-0 overflow-hidden rounded-[32px] px-5 py-6 sm:px-8 sm:py-7 xl:px-10 xl:py-8">
+              <DotMatrixWidget />
+              <div className="relative z-10 flex min-w-0 flex-col gap-4 sm:gap-5">
+                <h2 id="home-intro-title" className="font-serif text-[clamp(1.5rem,3.05vw,2.55rem)] font-bold leading-[1.14] text-[var(--text-main)]">
+                  Driven by <span className="text-[var(--accent-yellow)]">Curiosity</span>,
+                  <br />
+                  Grounded in <em>Reality</em>.
+                </h2>
+                <AskJerryEntry />
               </div>
             </section>
 
