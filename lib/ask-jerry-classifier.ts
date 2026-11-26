@@ -51,6 +51,20 @@ export function classifyQuestion(question: string, previousTopic?: AskTopic): Cl
       link: about,
     } };
   }
+  if (/^(?:(?:嗨|哈喽|你好|您好)[,。!\s]*)?(?:请问\s*)?(?:你|您)?\s*(?:叫(?:什么|啥)名字|名字(?:是)?(?:什么|叫啥)|怎么称呼(?:你|您)?|是谁)[?。!\s]*$/.test(text)) {
+    return { intent: 'capabilities', action: 'answer', reply: {
+      text: '你好！你可以叫我「问问 Jerry」，我是 Jerry 的网站助手。',
+    } };
+  }
+  if (/^(?:嗨|哈喽|你好|您好)[!。?\s]*$/.test(text)) {
+    return { intent: 'capabilities', action: 'answer', reply: scopeReply };
+  }
+  if (/^(?:能|可以|请)?(?:给我)?(?:介绍(?:一下)?|说说)?(?:你|您)(?:的)?(?:有(?:什么|哪些))?(?:亮点|特色)(?:是(?:什么|啥)|吗|呢)?[?。!\s]*$/.test(text)) {
+    return { intent: 'clarify', action: 'clarify', reply: {
+      text: '你想了解 Jerry 的项目亮点，还是我这个助手能帮你做什么？如果你在逛作品集，可以先从「关于我」里的智能问数案例看起。',
+      link: about,
+    } };
+  }
   if (/^(?:嗨|你好|哎)?[，,。！!\s]*那?(?:你|(?:这个|网站)?\s*(?:ai\s*助手|助手|机器人)|这个\s*ai)?\s*(?:目前|现在|主要)?\s*都?\s*(?:(?:可以|能|会)\s*(?:做什么|干什么|做些什么|干嘛|帮我做什么|回答什么|回答哪些|帮什么忙)|有(?:哪些|什么)?(?:样的)?功能)|我(?:都)?(?:能|可以)问(?:你)?(?:些)?什么|这个\s*(?:助手|ai|机器人)是干什么的/.test(text)) {
     return { intent: 'capabilities', action: 'answer', reply: scopeReply };
   }
