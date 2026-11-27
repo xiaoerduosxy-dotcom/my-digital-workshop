@@ -19,7 +19,7 @@ export default function WorkshopSidebar({ variant = 'home' }: { variant?: 'home'
 
       <div className="h-[200px] overflow-hidden lg:h-auto lg:flex-1">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/profile.png" alt="Jerry" className="h-full w-full select-none object-contain object-top lg:object-cover" />
+        <img src={home ? '/profile-animated.gif' : '/profile.png'} alt="Jerry" className="h-full w-full select-none object-contain object-top lg:object-cover" />
       </div>
 
       <div className="px-6 pt-3 pb-2 lg:px-8 lg:pt-4 lg:pb-2">
