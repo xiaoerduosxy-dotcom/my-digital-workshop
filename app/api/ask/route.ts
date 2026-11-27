@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     }, { status: 503, headers });
   }
 
-  const { publicProfile, ...decision } = replyForRoute(classification.route);
+  const { publicProfile, ...decision } = replyForRoute(classification.route, previousTopic);
   const generated = publicProfile && await answerWithDeepSeek(publicProfile, decision.reply.text);
   if (generated) {
     return Response.json({ ...decision, reply: { text: generated }, classificationSource: 'deepseek', source: 'deepseek' }, { headers });
