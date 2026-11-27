@@ -1,0 +1,62 @@
+{
+  "edition": {
+    "date": "2026-11-27",
+    "stories": [
+      {
+        "category": "AI 产品",
+        "source": "Krea",
+        "date": "2026-11-27",
+        "title": "Krea 推出 AI 动效编辑器 Krea Motion",
+        "summary": "Krea 发布了动态图形编辑器 Krea Motion，把团队开发的 AI 动效工作流程开放给所有人免费试用。做产品演示时，可以先试做一段动态标题或界面动效，用它确定视觉方向，再决定哪些细节值得手工精修。",
+        "url": "https://x.com/krea_ai/status/2125990539933978753"
+      },
+      {
+        "category": "模型进展",
+        "source": "Meshy",
+        "date": "2026-11-27",
+        "title": "Meshy 7.5 把高细节 3D 素材做得更轻",
+        "summary": "Meshy 开始逐步推出 7.5，主打实时场景的 3D 素材优化。官方展示的模型在外观接近原版的情况下，多边形数量压到约五十分之一。对游戏或网页 3D 原型来说，可以先用轻量版搭场景，减少为了实时渲染而重做素材的工作。",
+        "url": "https://x.com/MeshyAI/status/2126028221850542511"
+      },
+      {
+        "category": "模型进展",
+        "source": "Robbyant",
+        "date": "2026-11-27",
+        "title": "LingBot-Navi 让机器人记住走过的地方",
+        "summary": "蚂蚁集团旗下 Robbyant 开源了机器人导航模型 LingBot-Navi，公开了代码、权重和数据。它把走过的环境存成可复用的 3D 记忆，再结合眼前画面和文字指令规划路线。例如，机器人可以去找之前看到过、现在已不在视野里的物品。",
+        "url": "https://x.com/robbyant_brain/status/2126020732610302086"
+      }
+    ]
+  },
+  "archive": [
+    {
+      "date": "2026-11-26",
+      "stories": [
+        {
+          "category": "AI 产品",
+          "source": "Vid.AI",
+          "date": "2026-11-26",
+          "title": "Vid.AI 把视频编辑台搬进 AI 对话",
+          "summary": "Vid.AI 把视频工作台搬进了 AI 对话。创作者可以在聊天里选旁白和画风、预听声音、查看点数成本，还能在生成前改脚本、逐镜检查画面。确认后才开始渲染，适合把需要多轮修改的短视频制作留在同一个对话里。",
+          "url": "https://vid.ai/changelog#:~:text=Review%20each%20step%20when%20your%20AI%20assistant%20makes%20videos"
+        },
+        {
+          "category": "模型进展",
+          "source": "DeepL",
+          "date": "2026-11-26",
+          "title": "DeepL 让实时语音翻译少等一半",
+          "summary": "DeepL 发布实时语音翻译模型 Aure v2，已向 DeepL Voice 用户开放。它直接把一种语言的语音转成另一种语言的语音，并学习听到多少上下文才开口。按 DeepL 的内部测试，翻译的中位延迟比上一版减少了 50%。",
+          "url": "https://www.deepl.com/en/press-release/aure-v2"
+        },
+        {
+          "category": "模型进展",
+          "source": "NVIDIA",
+          "date": "2026-11-26",
+          "title": "英伟达开放图表和表格解析训练数据",
+          "summary": "英伟达公开了训练 Nemotron 3.5 Parse 用过的三套数据，涵盖图表、表格和多语言文档，并给出微调方法。开发者可以基于这些数据训练面向特定版式的文档模型，例如从扫描版财报提取图里的数值，并保留表格的行列关系。",
+          "url": "https://huggingface.co/blog/nvidia/building-on-nemotron-35-parse-open-data-fine-tunin"
+        }
+      ]
+    }
+  ]
+}

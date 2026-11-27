@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import AskJerryEntry from './components/AskJerryEntry';
+import DailyAiNews from './components/DailyAiNews';
 import DotMatrixWidget from './components/DotMatrixWidget';
 import WorkshopSidebar from './components/WorkshopSidebar';
 import { INSIGHTS } from '@/lib/insights';
+
+export const revalidate = 900;
 
 export default function Home() {
   return (
@@ -12,7 +15,7 @@ export default function Home() {
 
         <main className="w-full min-w-0 flex flex-col gap-6">
 
-          {/* ── 上半区：about + insights 自然排布 ── */}
+          {/* ── 上半区：AI 对话、每日资讯与行业洞察 ── */}
           <div className="flex flex-col gap-6">
 
             <section id="about" aria-labelledby="home-intro-title" className="neo-flat relative isolate min-w-0 overflow-hidden rounded-[32px] px-5 py-6 sm:px-8 sm:py-7 xl:px-10 xl:py-8">
@@ -26,6 +29,8 @@ export default function Home() {
                 <AskJerryEntry />
               </div>
             </section>
+
+            <DailyAiNews />
 
             <section id="insights" className="neo-flat rounded-[32px] p-6 lg:p-8">
               {/* 标题行 */}
