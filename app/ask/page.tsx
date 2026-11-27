@@ -32,7 +32,7 @@ export default function AskJerryPage() {
         </header>
 
         <main className="neo-flat flex min-h-0 min-w-0 flex-1 flex-col rounded-[24px] lg:rounded-[32px]">
-          <AskJerryChat />
+          <AskJerryChat isPreview={process.env.VERCEL_ENV !== 'production'} />
         </main>
       </div>
     </div>
