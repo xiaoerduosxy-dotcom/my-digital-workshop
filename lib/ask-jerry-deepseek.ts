@@ -43,7 +43,12 @@ function isGroundedReply(profile: PublicProfile, text: string) {
   return /^[,.。!?、:；;]*$/.test(remaining);
 }
 
-async function complete(key: string, instructions: string, input: string, maxTokens: number) {
+type DeepSeekFailure = 'not-configured' | 'unauthorized' | 'balance' | 'rate-limit'
+  | 'upstream' | 'timeout' | 'network' | 'invalid-response';
+
+type Completion = { text: string } | { failure: DeepSeekFailure };
+
+async function complete(key: string, instructions: string, input: string, maxTokens: number): Promise<Completion> {
   try {
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -59,19 +64,29 @@ async function complete(key: string, instructions: string, input: string, maxTok
         ],
       }),
       cache: 'no-store',
-      signal: AbortSignal.timeout(6_000),
+      signal: AbortSignal.timeout(10_000),
     });
-    if (!response.ok) return;
+    if (!response.ok) {
+      switch (response.status) {
+        case 401: case 403: return { failure: 'unauthorized' };
+        case 402: return { failure: 'balance' };
+        case 429: return { failure: 'rate-limit' };
+        default: return { failure: 'upstream' };
+      }
+    }
 
-    const data = await response.json() as {
+    const data = await response.json() as null | {
       choices?: { finish_reason?: string; message?: { content?: unknown } }[];
     };
     const choice = data?.choices?.[0];
-    if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string') return;
+    if (choice?.finish_reason !== 'stop' || typeof choice.message?.content !== 'string') {
+      return { failure: 'invalid-response' };
+    }
 
-    return choice.message.content.trim();
-  } catch {
-    // The caller handles timeouts and other provider failures.
+    return { text: choice.message.content.trim() };
+  } catch (error) {
+    if (error instanceof SyntaxError) return { failure: 'invalid-response' };
+    return { failure: error instanceof Error && error.name === 'TimeoutError' ? 'timeout' : 'network' };
   }
 }
 
@@ -89,19 +104,23 @@ clarify：指代或意图不清。例：能给我介绍一下你的亮点吗？
 off-topic：与工坊、Jerry 或网站助手无关。
 清楚的新主题优先于 previousTopic。只有明显在追问上一个项目而未指名时，才沿用上一轮项目；没有可用前文就澄清。涉及隐私时优先用 privacy。`;
 
-export async function classifyWithDeepSeek(question: string, previousTopic?: AskTopic): Promise<AskRoute | undefined> {
+export async function classifyWithDeepSeek(question: string, previousTopic?: AskTopic): Promise<{ route: AskRoute } | { failure: DeepSeekFailure }> {
   const key = process.env.DEEPSEEK_API_KEY?.trim();
-  if (!key) return;
+  if (!key) return { failure: 'not-configured' };
 
-  const label = await complete(key, CLASSIFICATION_RULES, JSON.stringify({ question, previousTopic }), 24);
-  return ROUTES.find(route => route === label);
+  const result = await complete(key, CLASSIFICATION_RULES, JSON.stringify({ question, previousTopic }), 48);
+  if ('failure' in result) return result;
+
+  const label = result.text.toLowerCase().replace(/^[`"']+|[`"'.。]+$/g, '');
+  const route = ROUTES.find(candidate => candidate === label);
+  return route ? { route } : { failure: 'invalid-response' };
 }
 
 async function requestReply(profile: PublicProfile, approvedText: string, key: string) {
   const answer = await complete(key,
     '你代表 Jerry 在个人网站上说话。只用所给公开资料，以 Jerry 的第一人称「我」写一到两句自然的中文，保留原有事实和产品用词。直接输出正文。不添加事实、年份、地点、公司、链接或建议。',
     approvedText, 96);
-  if (answer && isGroundedReply(profile, answer)) return answer;
+  if ('text' in answer && isGroundedReply(profile, answer.text)) return answer.text;
 }
 
 const cache = new Map<PublicProfile, { expiresAt: number; reply: Promise<string | undefined> }>();

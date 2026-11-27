@@ -36,7 +36,11 @@ export default function AskJerryChat() {
           body: JSON.stringify({ question: turn.question, topic: previousTopic }),
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error('Ask Jerry request failed');
+        if (!response.ok) {
+          const body: { diagnostic?: string } | null = await response.json().catch(() => null);
+          if (!controller.signal.aborted) finishQuestion(turn.id, turn.attempt, undefined, body?.diagnostic);
+          return;
+        }
         const { reply, intent, topic }: AskDecision = await response.json();
         if (!controller.signal.aborted) finishQuestion(turn.id, turn.attempt, { reply, intent, topic });
       } catch {
@@ -113,7 +117,8 @@ export default function AskJerryChat() {
                   </>
                 ) : turn.status === 'failed' ? (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                    <p className="text-[#802f49]">{turn.simulateFailure ? '这次没收到回复（模拟）。' : '这次没收到回复，可以重试。'}</p>
+                    <p className="text-[#802f49]">{turn.simulateFailure ? '这次没收到回复（模拟）。' : 'AI 问答暂时不可用，可以重试。'}</p>
+                    {turn.diagnostic && <span className="text-xs text-[#625773]">诊断码 {turn.diagnostic}</span>}
                     <button type="button" disabled={Boolean(pending)} onClick={() => { scrollOnUpdate.current = true; retryQuestion(turn.id); }} className="py-1 font-medium text-[#5e4f74] underline underline-offset-4 disabled:opacity-50">重试</button>
                   </div>
                 ) : (

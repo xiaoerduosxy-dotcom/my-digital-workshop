@@ -19,7 +19,8 @@ export type AskDecision = {
 
 type TurnBase = { id: string; question: string; attempt: number; simulateFailure: boolean };
 export type Turn = TurnBase & (
-  | { status: 'pending' | 'failed' }
+  | { status: 'pending' }
+  | { status: 'failed'; diagnostic?: string }
   | { status: 'ready'; reply: Reply; intent?: AskIntent; topic?: AskTopic }
 );
 
@@ -81,9 +82,9 @@ export function retryQuestion(id: string) {
   )));
 }
 
-export function finishQuestion(id: string, attempt: number, result?: Pick<AskDecision, 'reply' | 'intent' | 'topic'>) {
+export function finishQuestion(id: string, attempt: number, result?: Pick<AskDecision, 'reply' | 'intent' | 'topic'>, diagnostic?: string) {
   updateConversation((turns) => turns.map((turn) => {
     if (turn.id !== id || turn.status !== 'pending' || turn.attempt !== attempt) return turn;
-    return result ? { ...turn, status: 'ready', ...result } : { ...turn, status: 'failed' };
+    return result ? { ...turn, status: 'ready', ...result } : { ...turn, status: 'failed', diagnostic };
   }));
 }

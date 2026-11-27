@@ -2,6 +2,8 @@ import { ASK_TOPICS, QUESTION_LIMIT } from '@/lib/ask-jerry';
 import { asksForPrivateInfo, redactVisitorDetails, replyForRoute } from '@/lib/ask-jerry-classifier';
 import { answerWithDeepSeek, classifyWithDeepSeek } from '@/lib/ask-jerry-deepseek';
 
+export const maxDuration = 25;
+
 export async function POST(request: Request) {
   const headers = { 'Cache-Control': 'no-store' };
   const invalid = () => Response.json({ error: '这次没有收到有效的问题。' }, { status: 400, headers });
@@ -17,12 +19,18 @@ export async function POST(request: Request) {
     return Response.json({ ...replyForRoute('privacy'), classificationSource: 'privacy-check', source: 'rules' }, { headers });
   }
 
-  const route = await classifyWithDeepSeek(redactVisitorDetails(input.question), previousTopic);
-  if (!route) {
-    return Response.json({ error: '暂时无法判断你的问题，请稍后重试。' }, { status: 503, headers });
+  const classification = await classifyWithDeepSeek(redactVisitorDetails(input.question), previousTopic);
+  if ('failure' in classification) {
+    const { failure } = classification;
+    console.warn('[ask-jerry] classification failed', failure);
+    const showDetails = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+    return Response.json({
+      error: 'AI 问答暂时不可用，可以稍后重试。',
+      ...(showDetails ? { diagnostic: failure } : {}),
+    }, { status: 503, headers });
   }
 
-  const { publicProfile, ...decision } = replyForRoute(route);
+  const { publicProfile, ...decision } = replyForRoute(classification.route);
   const generated = publicProfile && await answerWithDeepSeek(publicProfile, decision.reply.text);
   if (generated) {
     return Response.json({ ...decision, reply: { text: generated }, classificationSource: 'deepseek', source: 'deepseek' }, { headers });
