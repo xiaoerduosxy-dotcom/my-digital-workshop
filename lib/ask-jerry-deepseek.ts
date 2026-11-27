@@ -43,7 +43,7 @@ function isGroundedReply(profile: PublicProfile, text: string) {
   return /^[,.。!?、:；;]*$/.test(remaining);
 }
 
-type DeepSeekFailure = 'not-configured' | 'unauthorized' | 'balance' | 'rate-limit'
+type DeepSeekFailure = 'not-configured' | 'deepseek-401' | 'deepseek-403' | 'balance' | 'rate-limit'
   | 'upstream' | 'timeout' | 'network' | 'invalid-response';
 
 type Completion = { text: string } | { failure: DeepSeekFailure };
@@ -68,7 +68,8 @@ async function complete(key: string, instructions: string, input: string, maxTok
     });
     if (!response.ok) {
       switch (response.status) {
-        case 401: case 403: return { failure: 'unauthorized' };
+        case 401: return { failure: 'deepseek-401' };
+        case 403: return { failure: 'deepseek-403' };
         case 402: return { failure: 'balance' };
         case 429: return { failure: 'rate-limit' };
         default: return { failure: 'upstream' };
@@ -114,6 +115,24 @@ export async function classifyWithDeepSeek(question: string, previousTopic?: Ask
   const label = result.text.toLowerCase().replace(/^[`"']+|[`"'.。]+$/g, '');
   const route = ROUTES.find(candidate => candidate === label);
   return route ? { route } : { failure: 'invalid-response' };
+}
+
+export async function checkDeepSeekCredential() {
+  const key = process.env.DEEPSEEK_API_KEY?.trim();
+  if (!key) return 'not-configured';
+
+  try {
+    const response = await fetch('https://api.deepseek.com/user/balance', {
+      headers: { Authorization: `Bearer ${key}` },
+      cache: 'no-store',
+      redirect: 'error',
+      signal: AbortSignal.timeout(4_000),
+    });
+    void response.body?.cancel().catch(() => {});
+    return `key-check-${response.status}`;
+  } catch {
+    return 'key-check-unreachable';
+  }
 }
 
 async function requestReply(profile: PublicProfile, approvedText: string, key: string) {

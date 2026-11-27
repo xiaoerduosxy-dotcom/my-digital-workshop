@@ -1,6 +1,6 @@
 import { ASK_TOPICS, QUESTION_LIMIT } from '@/lib/ask-jerry';
 import { asksForPrivateInfo, redactVisitorDetails, replyForRoute } from '@/lib/ask-jerry-classifier';
-import { answerWithDeepSeek, classifyWithDeepSeek } from '@/lib/ask-jerry-deepseek';
+import { answerWithDeepSeek, checkDeepSeekCredential, classifyWithDeepSeek } from '@/lib/ask-jerry-deepseek';
 
 export const maxDuration = 25;
 
@@ -22,11 +22,16 @@ export async function POST(request: Request) {
   const classification = await classifyWithDeepSeek(redactVisitorDetails(input.question), previousTopic);
   if ('failure' in classification) {
     const { failure } = classification;
-    console.warn('[ask-jerry] classification failed', failure);
-    const showDetails = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+    const isPreview = process.env.VERCEL_ENV === 'preview';
+    const showDetails = process.env.NODE_ENV === 'development' || isPreview;
+    const keyCheck = isPreview && (failure === 'deepseek-401' || failure === 'deepseek-403')
+      ? await checkDeepSeekCredential()
+      : undefined;
+    const diagnostic = keyCheck ? `${failure} / ${keyCheck}` : failure;
+    console.warn('[ask-jerry] classification failed', diagnostic);
     return Response.json({
       error: 'AI 问答暂时不可用，可以稍后重试。',
-      ...(showDetails ? { diagnostic: failure } : {}),
+      ...(showDetails ? { diagnostic } : {}),
     }, { status: 503, headers });
   }
 
