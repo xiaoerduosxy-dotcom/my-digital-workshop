@@ -1,6 +1,6 @@
 import { ASK_TOPICS, QUESTION_LIMIT } from '@/lib/ask-jerry';
-import { classifyQuestion } from '@/lib/ask-jerry-classifier';
-import { answerWithDeepSeek } from '@/lib/ask-jerry-deepseek';
+import { asksForPrivateInfo, redactVisitorDetails, replyForRoute } from '@/lib/ask-jerry-classifier';
+import { answerWithDeepSeek, classifyWithDeepSeek } from '@/lib/ask-jerry-deepseek';
 
 export async function POST(request: Request) {
   const headers = { 'Cache-Control': 'no-store' };
@@ -13,10 +13,19 @@ export async function POST(request: Request) {
 
   const requestedTopic = 'topic' in input ? input.topic : undefined;
   const previousTopic = ASK_TOPICS.find(topic => topic === requestedTopic);
-  const { publicProfile, ...decision } = classifyQuestion(input.question, previousTopic);
+  if (asksForPrivateInfo(input.question)) {
+    return Response.json({ ...replyForRoute('privacy'), classificationSource: 'privacy-check', source: 'rules' }, { headers });
+  }
+
+  const route = await classifyWithDeepSeek(redactVisitorDetails(input.question), previousTopic);
+  if (!route) {
+    return Response.json({ error: '暂时无法判断你的问题，请稍后重试。' }, { status: 503, headers });
+  }
+
+  const { publicProfile, ...decision } = replyForRoute(route);
   const generated = publicProfile && await answerWithDeepSeek(publicProfile, decision.reply.text);
   if (generated) {
-    return Response.json({ ...decision, reply: { text: generated }, source: 'deepseek' }, { headers });
+    return Response.json({ ...decision, reply: { text: generated }, classificationSource: 'deepseek', source: 'deepseek' }, { headers });
   }
-  return Response.json({ ...decision, source: 'rules' }, { headers });
+  return Response.json({ ...decision, classificationSource: 'deepseek', source: 'rules' }, { headers });
 }

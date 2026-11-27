@@ -71,7 +71,7 @@ export default function AskJerryChat() {
       <header className={`flex shrink-0 items-center justify-between gap-3 overflow-y-hidden pb-2 pt-4 lg:pb-3 lg:pt-6 ${GUTTER}`}>
         <div>
           <h1 className="font-serif text-xl font-bold leading-tight text-[#4b5064] lg:text-2xl">问问 Jerry</h1>
-            <p className="mt-1 text-xs leading-relaxed text-[#64697c]">网站助手 · 分类演示</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#64697c]">网站助手 · AI 预览</p>
         </div>
         <Link href="/" className="hidden min-h-11 shrink-0 items-center gap-1.5 text-xs font-medium text-[#5e4f74] underline-offset-4 hover:underline lg:inline-flex"><span aria-hidden="true">←</span>返回首页</Link>
       </header>
@@ -137,7 +137,7 @@ export default function AskJerryChat() {
           busy={Boolean(pending)}
         />
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-2 text-[11px] text-[#5f6275]">
-          <span>本次对话仅保留在当前标签页。</span>
+          <span>问题会经 DeepSeek 分类，请避免填写个人信息。</span>
           {process.env.NODE_ENV === 'development' && (
             <button type="button" disabled={Boolean(pending)} onClick={() => send('测试发送失败后重试', true)} className="rounded px-1 py-1 font-medium text-[#57446e] underline underline-offset-2 hover:text-[#35224d] disabled:opacity-50">测试失败重试</button>
           )}
