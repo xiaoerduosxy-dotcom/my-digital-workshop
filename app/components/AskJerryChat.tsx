@@ -71,7 +71,7 @@ export default function AskJerryChat() {
       <header className={`flex shrink-0 items-center justify-between gap-3 overflow-y-hidden pb-2 pt-4 lg:pb-3 lg:pt-6 ${GUTTER}`}>
         <div>
           <h1 className="font-serif text-xl font-bold leading-tight text-[#4b5064] lg:text-2xl">问问 Jerry</h1>
-            <p className="mt-1 text-xs leading-relaxed text-[#64697c]">网站助手 · AI 预览</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#64697c]">Jerry 的 AI 分身 · 预览</p>
         </div>
         <Link href="/" className="hidden min-h-11 shrink-0 items-center gap-1.5 text-xs font-medium text-[#5e4f74] underline-offset-4 hover:underline lg:inline-flex"><span aria-hidden="true">←</span>返回首页</Link>
       </header>
@@ -90,7 +90,7 @@ export default function AskJerryChat() {
         <div className="flex flex-col gap-5">
           {turns.length === 0 && (
             <div className="max-w-md">
-              <p className="text-sm leading-relaxed text-[#555a70]">想了解 Jerry 的项目、经历，还是这个网站是怎么做的？</p>
+              <p className="text-sm leading-relaxed text-[#555a70]">想了解我的项目、经历，还是这个网站是怎么做的？</p>
               <div className="mt-1.5 flex flex-wrap gap-x-4">
                 {SUGGESTED_QUESTIONS.map(({ label, question }) => (
                   <button key={label} type="button" onClick={() => send(question)} className="min-h-10 text-xs font-medium text-[#5e4f74] underline decoration-[#a89abf] underline-offset-4 hover:decoration-current">{label}</button>
@@ -105,7 +105,7 @@ export default function AskJerryChat() {
                 <p className="rounded-2xl rounded-br-md bg-[#e5ddec] px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-[#4e465c] [overflow-wrap:anywhere]">{turn.question}</p>
               </div>
               <div data-message="reply" data-intent={turn.status === 'ready' ? turn.intent : undefined} className="max-w-[92%] self-start rounded-2xl rounded-tl-md bg-white/53 px-3.5 py-2.5 text-[#51566b] sm:max-w-[min(78%,34rem)]">
-                <p className="mb-1 text-[11px] font-medium text-[#625773]">Jerry 的网站助手</p>
+                <p className="mb-1 text-[11px] font-medium text-[#625773]">Jerry</p>
                 {turn.status === 'ready' ? (
                   <>
                     <p className="text-sm leading-relaxed">{turn.reply.text}</p>
