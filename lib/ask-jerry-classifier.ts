@@ -1,4 +1,4 @@
-import type { AskDecision } from './ask-jerry';
+import type { AskDecision, AskTopic } from './ask-jerry';
 
 export type PublicProfile = 'career' | 'hobby';
 export type ClassifiedQuestion = AskDecision & { publicProfile?: PublicProfile };
@@ -12,7 +12,7 @@ const offTopic: AskDecision = { intent: 'off-topic', action: 'redirect', reply: 
 } };
 
 export const ROUTES = [
-  'privacy', 'identity', 'capabilities', 'profile-highlights', 'career', 'portfolio', 'lab', 'insights',
+  'privacy', 'gratitude', 'identity', 'capabilities', 'profile-highlights', 'career', 'portfolio', 'lab', 'insights',
   'smart-query', 'aidg', 'work', 'personal', 'personal-docs', 'hobby', 'coach',
   'clarify', 'off-topic',
 ] as const;
@@ -27,12 +27,16 @@ export function redactVisitorDetails(question: string) {
     .replace(/((?:我叫|我的姓名是|我名叫)\s*)[\p{L}·]+(?: [A-Za-z]+)*(?=[,，。;；!?！？\n]|$)/gu, '$1[姓名已隐藏]');
 }
 
-export function replyForRoute(route: AskRoute): ClassifiedQuestion {
+export function replyForRoute(route: AskRoute, previousTopic?: AskTopic): ClassifiedQuestion {
   switch (route) {
     case 'privacy':
       return { intent: 'privacy', action: 'refuse', reply: {
         text: '这部分我想留给自己。你可以问我做过哪些方向的产品，我也可以带你去看看我的工作项目。',
         link: about,
+      } };
+    case 'gratitude':
+      return { intent: 'gratitude', action: 'answer', topic: previousTopic, reply: {
+        text: '不客气，很高兴能帮到你！',
       } };
     case 'identity':
       return { intent: 'capabilities', action: 'answer', reply: {

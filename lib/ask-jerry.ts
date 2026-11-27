@@ -9,7 +9,7 @@ export const SUGGESTED_QUESTIONS = [
 export type Reply = { text: string; link?: { href: string; label: string } };
 export const ASK_TOPICS = ['smart-query', 'aidg', 'work', 'personal'] as const;
 export type AskTopic = (typeof ASK_TOPICS)[number];
-export type AskIntent = 'privacy' | 'capabilities' | 'navigation' | 'profile-highlights' | 'career' | 'work' | 'personal' | 'insights' | 'hobby' | 'off-topic' | 'clarify';
+export type AskIntent = 'privacy' | 'gratitude' | 'capabilities' | 'navigation' | 'profile-highlights' | 'career' | 'work' | 'personal' | 'insights' | 'hobby' | 'off-topic' | 'clarify';
 export type AskDecision = {
   intent: AskIntent;
   action: 'answer' | 'link' | 'refuse' | 'redirect' | 'clarify';
