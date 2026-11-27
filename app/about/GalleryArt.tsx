@@ -282,11 +282,27 @@ function Hall({ exhibit, focused, highlighted, onEnter, onPreview }: {
   );
 }
 
+function DistantTowers() {
+  return (
+    <>
+        <Block x={-27} y={141} z={135} width={33} length={38} thickness={135} colors={PALETTE.ai} />
+        <Dome x={-10} y={160} z={148} width={29} />
+        <Block x={174} y={-34} z={139} width={27} length={47} thickness={139} colors={PALETTE.entrance} />
+        <Dome x={188} y={-12} z={154} width={26} />
+        <Block x={314} y={27} z={122} width={31} length={50} thickness={122} colors={PALETTE.ai} />
+        <Block x={317} y={32} z={139} width={25} length={40} thickness={17} colors={PALETTE.step} />
+        <Dome x={330} y={53} z={154} width={24} />
+    </>
+  );
+}
+
 function DistantCourt() {
   return (
     <g className={styles.atmosphere}>
-      <circle cx="477" cy="159" r="105" fill="#fff3ce" opacity=".59" />
-      <circle cx="477" cy="159" r="119" fill="none" stroke="#fffdf5" opacity=".7" />
+      <g mask="url(#gallery-sun-mask)">
+      <circle cx="202" cy="189" r="105" fill="#fff3ce" opacity=".59" />
+      <circle cx="202" cy="189" r="119" fill="none" stroke="#fffdf5" opacity=".7" />
+      </g>
       <path d="M-260 262Q-70 311 72 252q113-49 242-16 148 36 261-4 105-39 228-1 121 38 324 10M-130 350Q-35 341 62 322q121-26 204-3m323-34q94-40 196-26 102 14 242-7"
         fill="none" stroke="#fffaf0" strokeWidth="1.7" opacity=".62" />
       <path d="M-192 479Q-47 439 123 473m584-72q158-20 329 37"
@@ -298,13 +314,7 @@ function DistantCourt() {
         <circle cx="747" cy="185" r="2.4" /><circle cx="706" cy="308" r="1.8" /><circle cx="102" cy="368" r="2" />
       </g>
       <g className={styles.distantTowers} opacity=".3">
-        <Block x={-27} y={141} z={135} width={33} length={38} thickness={135} colors={PALETTE.ai} />
-        <Dome x={-10} y={160} z={148} width={29} />
-        <Block x={174} y={-34} z={139} width={27} length={47} thickness={139} colors={PALETTE.entrance} />
-        <Dome x={188} y={-12} z={154} width={26} />
-        <Block x={314} y={27} z={122} width={31} length={50} thickness={122} colors={PALETTE.ai} />
-        <Block x={317} y={32} z={139} width={25} length={40} thickness={17} colors={PALETTE.step} />
-        <Dome x={330} y={53} z={154} width={24} />
+        <DistantTowers />
       </g>
     </g>
   );
@@ -391,6 +401,21 @@ export function GalleryArt({ travelerRef, destination, departure, focused, highl
   return (
     <svg viewBox={VIEWBOX} className={styles.art} aria-hidden="true">
       <defs>
+        <filter id="gallery-silhouette" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" />
+        </filter>
+        <mask id="gallery-traveler-mask" maskUnits="userSpaceOnUse" x="-300" y="-300" width="1500" height="1300" style={{ maskType: 'luminance' }}>
+          <rect x="-300" y="-300" width="1500" height="1300" fill="white" />
+          <g filter="url(#gallery-silhouette)">
+            <Block {...sites.design.building} z={sites.design.building.z + sites.design.building.height}
+              thickness={sites.design.building.height} colors={PALETTE.design} />
+            <Roof exhibit="design" {...sites.design.building} />
+          </g>
+        </mask>
+        <mask id="gallery-sun-mask" maskUnits="userSpaceOnUse" x="-300" y="-300" width="1500" height="1300" style={{ maskType: 'luminance' }}>
+          <rect x="-300" y="-300" width="1500" height="1300" fill="white" />
+          <g filter="url(#gallery-silhouette)"><DistantTowers /></g>
+        </mask>
         <linearGradient id="gallery-roof" x2=".9" y2="1"><stop stopColor="#fff0bb" /><stop offset=".54" stopColor="#f5c6ad" /><stop offset="1" stopColor="#e1a0b5" /></linearGradient>
         <filter id="gallery-shadow" x="-.3" y="-.8" width="1.6" height="2.6"><feGaussianBlur stdDeviation="12" /></filter>
         <filter id="gallery-muted" colorInterpolationFilters="sRGB">
@@ -411,9 +436,12 @@ export function GalleryArt({ travelerRef, destination, departure, focused, highl
           </g>
         ))}
         <Arrival highlighted={highlighted === 'arrival'} onReturn={onReturn} onPreview={onPreview} />
-        <path d={destination ? line(galleryRoute(destination, departure)) : overviewTrails} className={styles.trail} />
+        <path d={destination ? line(galleryRoute(destination, departure)) : overviewTrails}
+          className={styles.trail} mask="url(#gallery-traveler-mask)" />
+        <g>
         <g ref={travelerRef} data-traveler pointerEvents="none" transform={`translate(${project(startPoint).join(' ')})`}>
           <Traveler />
+        </g>
         </g>
       </g>
     </svg>

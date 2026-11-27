@@ -22,7 +22,7 @@ export function line(points: readonly Point[]) {
 }
 
 export const arrival: Floor = { x: 0, y: 208, z: 34, width: 126, length: 121 };
-export const startPoint: Point3 = [58, 289, arrival.z];
+export const startPoint: Point3 = [74, 277, arrival.z];
 
 export const sites: Record<Exhibit, { terrace: Floor; building: Building; marker: Point3 }> = {
   design: {
@@ -92,7 +92,7 @@ function doorstep(exhibit: Exhibit): Point3 {
   return [x + width / 2, y + length + 6, z];
 }
 
-const entranceRoute: Point3[] = [startPoint, [58, 269, arrival.z]];
+const entranceRoute: Point3[] = [startPoint, [74, 257, arrival.z]];
 const designLanding: Point3[] = [...entranceRoute, ...stairRoute(stairs.design), [223, 269, 75]];
 const aiLanding: Point3[] = [...designLanding, ...stairRoute(stairs.ai), [223, 141, 135]];
 const routes: Record<Exhibit, Point3[]> = {
@@ -104,9 +104,9 @@ const routes: Record<Exhibit, Point3[]> = {
 
 export const exhibitIds = ['design', 'ai', 'garden', 'archive'] as const;
 
-export function galleryRoute(exhibit: Exhibit, from?: Exhibit) {
+export function galleryRoute3D(exhibit: Exhibit, from?: Exhibit) {
   const target = routes[exhibit];
-  if (!from) return target.map(point => project(point));
+  if (!from) return target;
 
   const origin = routes[from];
   let shared = 0;
@@ -115,7 +115,11 @@ export function galleryRoute(exhibit: Exhibit, from?: Exhibit) {
     shared += 1;
   }
   // Walk back to the shared landing, then follow the branch to the next exhibit.
-  return [...origin.slice(shared - 1).reverse(), ...target.slice(shared)].map(point => project(point));
+  return [...origin.slice(shared - 1).reverse(), ...target.slice(shared)];
+}
+
+export function galleryRoute(exhibit: Exhibit, from?: Exhibit) {
+  return galleryRoute3D(exhibit, from).map(point => project(point));
 }
 
 export function galleryFocus(exhibit: Exhibit): Point {

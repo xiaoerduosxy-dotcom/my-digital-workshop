@@ -108,6 +108,8 @@
 .hotspot:is([data-highlighted], [aria-pressed="true"]) .hotspotLabel { background: #fff0bf; box-shadow: none; }
 .hotspot[data-highlighted] { z-index: 1; }
 .arrivalButton .hotspotLabel { background: #fff3ce; border-color: #fffc; }
+.arrivalButton .dot { display: none; }
+.arrivalArrow { line-height: 1; }
 .hotspot:focus-visible, .back:focus-visible, .navLink:focus-visible { outline: 2px solid #6a5390; outline-offset: 3px; }
 .hotspot:disabled { cursor: wait; }
 .dot { display: inline-block; flex: none; width: 9px; height: 9px; border-radius: 50%; background: #efb642; box-shadow: 0 0 0 3px #f4c66042; }
@@ -158,13 +160,15 @@
   .arrow { display: none; }
 }
 
-@media (min-width: 761px) and (hover: hover) and (pointer: fine) {
-  .stage[data-phase="inside"] .hotspot[data-exhibit]:not([data-highlighted]) .hotspotLabel {
-    width: 19px; height: 19px; padding: 0; gap: 0;
-  }
-  .stage[data-phase="inside"] .hotspot[data-exhibit]:not([data-highlighted]) :is(.hotspotName, .arrow) {
-    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
-  }
+.stage[data-phase="inside"] .hotspot:not(:is([aria-pressed="true"], [data-highlighted], :focus-visible)) .hotspotLabel {
+  width: 20px; height: 20px; padding: 0; gap: 0;
+  background: transparent; border-color: #dca439; box-shadow: none;
+}
+.stage[data-phase="inside"] .hotspot:not(:is([aria-pressed="true"], [data-highlighted], :focus-visible)) :is(.hotspotName, .arrow, .arrivalArrow) {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
+.stage[data-phase="inside"] .arrivalButton:not(:is([data-highlighted], :focus-visible)) .dot {
+  display: inline-block;
 }
 
 @media (prefers-reduced-motion: reduce) {

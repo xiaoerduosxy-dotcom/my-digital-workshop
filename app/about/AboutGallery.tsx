@@ -3,31 +3,35 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { GalleryArt, travelerFrame } from './GalleryArt';
-import { exhibitIds, galleryFocus, galleryRoute, galleryView, project, sites, type Exhibit, type GalleryRegion, type Point } from './gallery-geometry';
+import { exhibitIds, galleryFocus, galleryRoute3D, galleryView, project, sites, type Exhibit, type GalleryRegion, type Point } from './gallery-geometry';
 import styles from './gallery.module.css';
 
 const exhibits = {
   design: {
-    name: '设计展台',
-    title: '从想法到看得见的东西',
-    description: '我喜欢先做一个能点、能试的原型。这座个人工坊就是一次尝试：先梳理页面和功能，再用 AI 辅助实现，自己验证电脑和手机上的体验。',
+    name: 'AI 健身',
+    label: 'AI 健身 · 个人项目构想',
+    title: '训练计划怎么跟得上真实生活？',
+    description: '我想试试，AI 能不能结合训练目标和当天能腾出的时间，帮人选出一项自己愿意做、也做得下去的训练。',
   },
   ai: {
-    name: '智能问数',
-    title: '让业务人员也能自己查数',
-    description: '这是我参与的企业 AI 项目。我主要做问数后台的主题划分、字段说明和查询范围配置，让业务人员可以用自然语言查数据，不必自己写 SQL。',
+    name: '我的爱好',
+    label: '我的爱好',
+    title: '我和健身',
+    description: '我健身已经好几年了，也曾兼职做过健身教练。现在我还会去上团课，训练一直是我生活里很重要的一部分。',
   },
   garden: {
-    name: '灵感花园',
-    title: '展区筹备中',
-    description: '这里留给日常收集的灵感和还在试做的小作品。',
+    name: '工作项目',
+    label: '工作项目',
+    title: '智能问数，让业务人员自己查数',
+    description: '这是我参与的企业 AI 项目。我主要做问数后台的主题划分、字段说明和查询范围配置，让业务人员可以用自然语言查数据，不必自己写 SQL。',
   },
   archive: {
-    name: '探索档案',
-    title: '展区筹备中',
-    description: '这里留给后续的产品实验和项目复盘。',
+    name: '帮我选',
+    label: '帮我选 · 个人项目构想',
+    title: '今晚去上团课，坐地铁还是骑车？',
+    description: '我经常在两个各有好处的选项之间来回想。我想做个小助手，把时间、花费和当下的偏好理清楚，再给出一个有理由、能执行的建议。',
   },
-} satisfies Record<Exhibit, { name: string; title: string; description: string }>;
+} satisfies Record<Exhibit, { name: string; label: string; title: string; description: string }>;
 
 const walkCycleLength = 64;
 const walkFrames = travelerFrame.columns * travelerFrame.rows - 1;
@@ -36,7 +40,8 @@ const arrivalMarker = project([90, 267, 41]);
 type Phase = 'idle' | 'walking' | 'opening' | 'inside';
 
 function measureRoute(exhibit: Exhibit, from?: Exhibit) {
-  const points = galleryRoute(exhibit, from);
+  const worldPoints = galleryRoute3D(exhibit, from);
+  const points = worldPoints.map(point => project(point));
   let distance = 0;
   const segments = points.slice(1).flatMap((to, index) => {
     const from = points[index];
@@ -45,7 +50,7 @@ function measureRoute(exhibit: Exhibit, from?: Exhibit) {
 
     const start = distance;
     distance += length;
-    return [{ from, to, length, start, end: distance }];
+    return [{ from, to, worldFrom: worldPoints[index], worldTo: worldPoints[index + 1], length, start, end: distance }];
   });
   return { segments, length: distance };
 }
@@ -55,7 +60,11 @@ function poseOnRoute(route: ReturnType<typeof measureRoute>, distance: number) {
   const { from, to, start, length } = segment;
   const part = Math.min(1, Math.max(0, (distance - start) / length));
   const point: Point = [from[0] + (to[0] - from[0]) * part, from[1] + (to[1] - from[1]) * part];
-  return { point, facing: Math.abs(to[0] - from[0]) < .001 ? null : to[0] > from[0] ? 1 : -1 };
+  const worldX = segment.worldFrom[0] + (segment.worldTo[0] - segment.worldFrom[0]) * part;
+  const worldY = segment.worldFrom[1] + (segment.worldTo[1] - segment.worldFrom[1]) * part;
+  const building = sites.design.building;
+  const behindDesign = worldX < building.x + building.width && worldY < building.y + building.length;
+  return { point, behindDesign, facing: Math.abs(to[0] - from[0]) < .001 ? null : to[0] > from[0] ? 1 : -1 };
 }
 
 function cameraFor(exhibit: Exhibit) {
@@ -107,7 +116,8 @@ export default function AboutGallery() {
     const figure = traveler.current;
     if (!figure) return;
 
-    const { point, facing } = poseOnRoute(route, distance);
+    const { point, facing, behindDesign } = poseOnRoute(route, distance);
+    figure.parentElement?.setAttribute('mask', behindDesign ? 'url(#gallery-traveler-mask)' : 'none');
     const { columns, width, height } = travelerFrame;
     figure.setAttribute('transform', `translate(${point.join(' ')})`);
     figure.style.setProperty('--frame-x', `${-(frame % columns) * width}px`);
@@ -193,8 +203,8 @@ export default function AboutGallery() {
         <section className={styles.gallery} aria-labelledby="about-gallery-title">
           <header className={styles.heading}>
             <p className={styles.eyebrow}>关于我 <span aria-hidden="true">／</span> DIGITAL WORKSHOP</p>
-            <h1 id="about-gallery-title">jerry 的作品展</h1>
-            <p className={styles.intro}>嗨，我是 jerry。沿着楼梯走，看看我做过的东西。</p>
+            <h1 id="about-gallery-title">欢迎走进 Jerry 的世界</h1>
+            <p className={styles.intro}>嗨，我是 Jerry。跟我沿着楼梯逛逛吧，<br />看看我正在琢磨的 AI 点子、做过的项目，还有工作之外的日常。</p>
           </header>
 
           <div className={styles.stage} data-phase={phase} data-destination={destination ?? undefined}
@@ -234,7 +244,11 @@ export default function AboutGallery() {
                 onFocus={event => { if (event.currentTarget.matches(':focus-visible')) preview('arrival', true); }}
                 onBlur={() => preview('arrival', false)}
                 onClick={backToGallery}>
-                <span className={styles.hotspotLabel}><span aria-hidden="true">↶</span> 返回起点</span>
+                <span className={styles.hotspotLabel}>
+                  <span className={styles.dot} aria-hidden="true" />
+                  <span className={styles.arrivalArrow} aria-hidden="true">↶</span>
+                  <span className={styles.hotspotName}>返回起点</span>
+                </span>
               </button>
             )}
           </div>
@@ -242,7 +256,7 @@ export default function AboutGallery() {
           <footer className={styles.caption}>
             {phase === 'inside' && current ? (
               <div className={styles.exhibitInfo} data-room={destination}>
-                <p className={styles.label}>{current.name}</p>
+                <p className={styles.label}>{current.label}</p>
                 <h2 ref={roomHeading} tabIndex={-1}>{current.title}</h2>
                 <p>{current.description}</p>
               </div>
