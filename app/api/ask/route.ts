@@ -1,5 +1,5 @@
 import { ASK_TOPICS, QUESTION_LIMIT } from '@/lib/ask-jerry';
-import { asksForPrivateInfo, redactVisitorDetails, replyForRoute } from '@/lib/ask-jerry-classifier';
+import { redactVisitorDetails, replyForRoute } from '@/lib/ask-jerry-classifier';
 import { answerWithDeepSeek, checkDeepSeekCredential, classifyWithDeepSeek } from '@/lib/ask-jerry-deepseek';
 
 export const maxDuration = 25;
@@ -15,10 +15,6 @@ export async function POST(request: Request) {
 
   const requestedTopic = 'topic' in input ? input.topic : undefined;
   const previousTopic = ASK_TOPICS.find(topic => topic === requestedTopic);
-  if (asksForPrivateInfo(input.question)) {
-    return Response.json({ ...replyForRoute('privacy'), classificationSource: 'privacy-check', source: 'rules' }, { headers });
-  }
-
   const classification = await classifyWithDeepSeek(redactVisitorDetails(input.question), previousTopic);
   if ('failure' in classification) {
     const { failure } = classification;
