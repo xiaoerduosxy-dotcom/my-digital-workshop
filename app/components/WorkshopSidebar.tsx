@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import TrackingPortrait from './TrackingPortrait';
 import petStyles from './workshop-pet.module.css';
 
 export const WORKSHOP_NAV = [
@@ -19,8 +20,12 @@ export default function WorkshopSidebar({ variant = 'home' }: { variant?: 'home'
       <div className="corner-screw br" />
 
       <div className={`${petStyles.jerryPortrait} relative h-[200px] overflow-hidden lg:h-auto lg:flex-1`} data-jerry-portrait>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={home ? '/profile-animated.gif' : '/profile.png'} alt="Jerry" className="h-full w-full select-none object-contain object-top lg:object-cover" />
+        {home ? (
+          <TrackingPortrait />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/profile.png" alt="Jerry" className="h-full w-full select-none object-contain object-top lg:object-cover" />
+        )}
       </div>
 
       <div className="px-6 pt-3 pb-2 lg:px-8 lg:pt-4 lg:pb-2">
