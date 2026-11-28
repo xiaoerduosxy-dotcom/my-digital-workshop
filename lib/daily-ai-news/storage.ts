@@ -77,6 +77,18 @@ export async function readNewsState(): Promise<{ state: NewsState | null; etag?:
   }
 }
 
+export async function readLatestCompleteEdition() {
+  const saved = await readNewsState().catch(error => {
+    console.warn('[daily-ai-news] Could not load edition:', error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  });
+  const state = saved?.state;
+  const editions = [state?.edition, ...(state?.archive ?? []), launchEditions.edition];
+  return editions
+    .filter((edition): edition is NewsEdition => edition != null && edition.stories.length === editorialRules.storiesPerEdition)
+    .sort((a, b) => b.date.localeCompare(a.date))[0] ?? launchEditions.edition;
+}
+
 export async function saveNewsState(state: NewsState, etag?: string) {
   const content = JSON.stringify(state);
   const token = blobToken();
