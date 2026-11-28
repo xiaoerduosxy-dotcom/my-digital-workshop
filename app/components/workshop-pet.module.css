@@ -1,0 +1,645 @@
+:is(.root, .restoreShortcut) {
+  --pet-bottom: .45rem;
+  position: fixed;
+  right: max(clamp(.65rem, 1.5vw, 1.15rem), env(safe-area-inset-right));
+  bottom: max(var(--pet-bottom), env(safe-area-inset-bottom));
+  z-index: 50;
+}
+
+:is(.root, .restoreShortcut)[data-chat-page="true"] {
+  --pet-bottom: calc(8.5rem + env(safe-area-inset-bottom));
+}
+
+.root {
+  --cat-width: clamp(7.6rem, 13.8vw, 11rem);
+  --ink: #463442;
+  --muted: #6e5965;
+  width: var(--cat-width);
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.actor { position: relative; }
+
+.jerryReachMask {
+  position: fixed;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:is(.jerryReachBody, .jerryReachArm, .jerryHeldArt, .jerryTransferHeld, .jerryMotionPose) {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+
+.jerryReachBody {
+  clip-path: polygon(0 0, 100% 0, 100% 42%, 48% 42%, 48% 53%, 47% 55%, 44% 65%, 43% 67%, 100% 67%, 100% 100%, 0 100%);
+  animation: jerryReachBody var(--jerry-duration) ease-in-out both;
+}
+
+.jerryReachArm {
+  clip-path: polygon(47.6% 42%, 100% 42%, 100% 68%, 42% 68%, 44% 62%, 46% 55%);
+  transform-origin: 45.6% 60%;
+  animation: jerryReachArm var(--jerry-duration) ease-in-out both;
+}
+
+.jerryMotionPose {
+  background-repeat: no-repeat;
+  background-size: 200% 200%;
+  transform-origin: 42% 70%;
+}
+
+.jerryMotionPose[data-jerry-pose="fold"] { animation: jerryFold var(--jerry-duration) ease-in-out both; }
+.jerryMotionPose[data-jerry-pose="lift"] {
+  background-position: 100% 0;
+  animation: jerryScoop var(--jerry-duration) both, jerryPrepareOpacity var(--jerry-duration) linear both;
+}
+.jerryMotionPose[data-jerry-pose="jump"] {
+  background-position: 0 100%;
+  animation: jerryReady var(--jerry-duration) both, jerryPrepareOpacity var(--jerry-duration) linear both;
+}
+.jerryMotionPose[data-jerry-pose="cradle"] {
+  background-position: 100% 100%;
+  animation: jerryCradle var(--jerry-duration) both, jerryCradleOpacity var(--jerry-duration) linear both;
+}
+
+.jerryTransferStage {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+:is(.jerryTransferInProgress, .jerryTransferStand, .jerryCatGround) { position: absolute; inset: 0; }
+:is(.jerryTransferPortrait, .jerryTransferGrip, .jerryTransferCat, .jerryTransferFinal) { position: absolute; }
+:is(.jerryTransferInProgress, .jerryTransferPortrait) { isolation: isolate; }
+
+/* Combine pose fades inside each group so the page does not show through overlapping artwork. */
+:is(.jerryTransferInProgress, .jerryTransferFinal, .jerryTransferStand,
+  .jerryTransferPortrait .jerryMotionPose) { mix-blend-mode: plus-lighter; }
+
+.jerryTransferInProgress { animation: jerryBeforeHold var(--jerry-duration) linear both; }
+.jerryTransferFinal { overflow: hidden; animation: jerryHeldOpacity var(--jerry-duration) linear both; }
+.jerryTransferStand { overflow: hidden; animation: jerryStandOpacity var(--jerry-duration) linear both; }
+.jerryTransferPortrait { z-index: 1; }
+.jerryTransferGrip { z-index: 3; }
+
+.jerryTransferPortrait .jerryMotionPose { mask-image: linear-gradient(#000 89%, transparent 100%); }
+.jerryTransferPortrait [data-jerry-pose="lift"] {
+  mask-image: linear-gradient(#000 88%, transparent 100%), linear-gradient(90deg, transparent 46%, #000 56%);
+}
+
+/* Place the front forearm over the airborne cat while the rest of Jerry stays behind it. */
+.jerryTransferGrip [data-jerry-pose="lift"] {
+  clip-path: polygon(23% 68%, 33% 66%, 37% 74%, 47% 84%, 58% 86%, 68% 87%, 75% 99%, 73% 100%, 57% 100%, 46% 92%, 34% 84%, 26% 77%);
+}
+
+.jerryTransferGrip [data-jerry-pose="cradle"] {
+  clip-path: polygon(25% 74%, 33% 70%, 39% 78%, 50% 77%, 56% 72%, 61% 69%, 66% 69%, 67% 77%, 62% 82%, 55% 85%, 35% 89%, 24% 83%);
+}
+
+.jerryTransferHeld, .jerryHeldArt {
+  mask-image: linear-gradient(#000 max(87%, calc(var(--held-bottom) - 6%)), transparent var(--held-bottom));
+  transform-origin: center 83%;
+}
+
+.jerryTransferHeld {
+  animation: jerryReceive var(--jerry-duration) both;
+}
+
+.jerryTransferCat {
+  z-index: 2;
+  transform-origin: 50% 55%;
+}
+
+[data-jerry-transfer="lift"] .jerryTransferCat { animation: catLift var(--jerry-duration) both; }
+[data-jerry-transfer="jump"] .jerryTransferCat { animation: catLeap var(--jerry-duration) both; }
+.jerryCatGround { animation: catLeaveGround var(--jerry-duration) step-end both; }
+
+.jerryCatAir {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 300% 200%;
+  animation: catInAir var(--jerry-duration) step-end both;
+}
+
+[data-jerry-transfer="lift"] .jerryCatAir { background-position: 50% 100%; }
+[data-jerry-transfer="jump"] .jerryCatAir { background-position: 100% 100%; }
+[data-approach-side="left"] .jerryCatAir { scale: -1 1; }
+
+.jerryPortrait:is([data-jerry-transferring], :has(> .jerryHoldPortrait)) > :is(img, canvas) { visibility: hidden; }
+
+.jerryHoldPortrait {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.jerryHeldArt {
+  top: var(--held-top);
+  left: var(--held-left);
+  width: var(--held-width);
+  height: var(--held-height);
+  animation: holdBreathe 5.8s .4s ease-in-out infinite;
+}
+
+.jerryHoldPortrait:focus-visible { outline: 2px solid #79558c; outline-offset: -4px; }
+
+.root button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.root button:focus-visible, .restoreShortcut:focus-visible, .contextMenu button:focus-visible {
+  outline: 2px solid #79558c;
+  outline-offset: 2px;
+}
+
+.root .cat {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 0;
+  border-radius: 1.2rem;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.actor[data-grab="dragging"] .cat { cursor: grabbing; }
+.actor[data-grab="dragging"] .shadow { opacity: .3; }
+.root .cat[data-held="true"] { visibility: hidden; pointer-events: none; }
+
+.shadow {
+  position: absolute;
+  inset: auto 16% 6%;
+  height: 10%;
+  border-radius: 50%;
+  background: #42303b2e;
+  filter: blur(.25rem);
+  pointer-events: none;
+}
+
+.catFrame {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 300% 200%;
+  background-position: 0 0;
+  transform-origin: 54% 91%;
+  pointer-events: none;
+  animation: breathe 4s ease-in-out infinite;
+}
+
+.catFrame[data-pose="nuzzle"] { animation: nuzzle 1.4s ease-in-out both; }
+.catFrame[data-pose="jerry-pet"] { animation: purr .92s ease-in-out 3; }
+.catFrame[data-pose="stretch"] { background-position: 50% 0; animation: stretch 2.4s ease-in-out both; }
+.catFrame[data-pose="sleep"] { background-position: 100% 0; animation-duration: 5.3s; }
+.catFrame[data-pose="eat"] { background-position: 0 100%; animation: nibble .55s ease-in-out infinite; }
+.catFrame[data-pose="roll"] { background-position: 50% 100%; animation: roll .9s ease-out both; }
+.catFrame[data-pose="play"] { background-position: 100% 100%; animation: pounce 1.2s ease-in-out both; }
+.catFrame[data-pose="grumpy"] { background-size: 100% 100%; animation: grumble .55s ease-in-out both; }
+.catFrame[data-pose="walk"] { animation: walkFrames .56s step-end infinite; }
+.catFrame[data-pose="run"] { background-position: 100% 0; animation: runFrames .34s step-end infinite; }
+.catFrame[data-pose="climb"] { background-position: 50% 100%; animation: climbFrames .57s step-end infinite; }
+.catFrame[data-pose^="rest-"] {
+  background-size: 200% 200%;
+  transform-origin: 50% 94%;
+  animation: settle .22s ease-out, breathe 4.2s .22s ease-in-out infinite;
+}
+.catFrame[data-pose="rest-sprawl"] { background-position: 100% 0; }
+.catFrame[data-pose="rest-chin"] { background-position: 0 100%; }
+.catFrame[data-pose="rest-loaf"] { background-position: 100% 100%; }
+.catFrame[data-facing="left"], .actor[data-wand-side="right"] .catFrame[data-pose="play"] { scale: -1 1; }
+
+.dream {
+  position: absolute;
+  top: 16%;
+  left: 31%;
+  color: #66487c;
+  font-size: clamp(.85rem, 1.5vw, 1.2rem);
+  font-weight: 750;
+  line-height: 1;
+  text-shadow: 0 1px 3px #fff;
+  pointer-events: none;
+  animation: drift 4s ease-in-out infinite;
+}
+
+.dream sup { margin-left: .12em; }
+
+.panel {
+  position: absolute;
+  right: 0;
+  bottom: var(--panel-above, calc(100% + .45rem));
+  width: min(16.5rem, calc(100vw - 1.7rem));
+  max-height: var(--panel-space, 60dvh);
+  padding: .8rem;
+  overflow: auto;
+  border: 1px solid #fff;
+  border-radius: 1.15rem;
+  outline: none;
+  background: linear-gradient(150deg, #fffbf7, #f6edf6);
+  box-shadow: 0 5px 24px #4f385439;
+  animation: arrive .18s ease-out both;
+  pointer-events: auto;
+}
+
+.panel[data-side] { left: var(--panel-x); right: auto; }
+.panel[data-side="below"] { top: var(--panel-below, calc(100% + .45rem)); bottom: auto; }
+
+.bond { margin: 0 2.45rem .7rem .12rem; }
+
+.bond label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.bond label span {
+  color: var(--muted);
+  font: .68rem var(--font-mono), monospace;
+}
+
+.bond progress {
+  display: block;
+  width: 100%;
+  height: .38rem;
+  margin-top: .38rem;
+  overflow: hidden;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: #e7d5e6;
+  color: #9b608c;
+}
+
+.bond progress::-webkit-progress-bar { background: #e7d5e6; }
+.bond progress::-webkit-progress-value { border-radius: inherit; background: #9b608c; }
+.bond progress::-moz-progress-bar { border-radius: inherit; background: #9b608c; }
+
+.close {
+  position: absolute;
+  top: .24rem;
+  right: .36rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.close:hover { background: #edddeb; }
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .33rem;
+}
+
+.actions button {
+  min-height: 2.75rem;
+  border: 1px solid #e5d7e7;
+  border-radius: .7rem;
+  background: #fffbff;
+  color: #59416b;
+  font-size: .79rem;
+  font-weight: 650;
+}
+
+.actions:has(> :nth-child(5)) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.actions:has(> :nth-child(5)) > button { grid-column: span 2; }
+.actions:has(> :nth-child(5)) > button:nth-child(n + 4) { grid-column: span 3; }
+.actions button:hover, .actions button:active { background: #eee0f0; }
+.actions button:disabled { opacity: .55; cursor: default; }
+
+.sleepSetting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.7rem auto auto;
+  align-items: center;
+  gap: .27rem;
+  margin-top: .55rem;
+  padding-top: .45rem;
+  border-top: 1px solid #eadce9;
+  color: var(--muted);
+  font-size: .71rem;
+}
+
+.sleepSetting input {
+  width: 100%;
+  height: 2.25rem;
+  padding: .18rem .3rem;
+  border: 1px solid #e5d7e7;
+  border-radius: .45rem;
+  background: #fffaff;
+  color: var(--ink);
+  font-size: max(16px, .8rem);
+  text-align: center;
+  appearance: textfield;
+}
+
+.sleepSetting input::-webkit-inner-spin-button, .sleepSetting input::-webkit-outer-spin-button { appearance: none; }
+.sleepSetting input:focus-visible { outline: 2px solid #79558c; outline-offset: 1px; }
+
+.sleepSetting button {
+  min-height: 2.75rem;
+  min-width: 2.65rem;
+  border-radius: .45rem;
+  color: #61446e;
+  font-weight: 650;
+}
+
+.sleepSetting button:hover { background: #edddeb; }
+
+.jerrySetting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  min-height: 2.6rem;
+  padding-inline: .12rem .35rem;
+  border-bottom: 1px solid #eadce9;
+  color: var(--muted);
+  font-size: .73rem;
+  cursor: pointer;
+}
+
+.jerrySetting input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #83598c;
+  cursor: pointer;
+}
+
+.jerrySetting input:focus-visible { outline: 2px solid #79558c; outline-offset: 2px; }
+
+.panelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .42rem;
+  margin: .25rem 0 -.26rem .12rem;
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+
+.hide {
+  min-height: 2.75rem;
+  flex: none;
+  padding: .2rem .35rem;
+  border-radius: .45rem;
+  color: #61446e;
+  font-size: .72rem;
+  white-space: nowrap;
+}
+
+.hide:hover { background: #edddeb; }
+
+.bondRules {
+  margin-top: .25rem;
+  padding: .12rem .12rem 0;
+  border-top: 1px solid #eadce9;
+  color: var(--muted);
+  font-size: .73rem;
+  line-height: 1.5;
+}
+
+.bondRules summary {
+  min-height: 2rem;
+  padding-block: .4rem;
+  color: #61446e;
+  cursor: pointer;
+}
+
+.bondRules p { margin: 0 0 .4rem; }
+
+.restoreShortcut, .contextMenu {
+  border: 1px solid #fff;
+  background: #fdf7fd;
+  box-shadow: 0 5px 20px #4f385439;
+  color: #513a5c;
+  font-size: .8rem;
+}
+
+.restoreShortcut {
+  min-height: 2.75rem;
+  padding: .35rem .75rem;
+  border-radius: .75rem;
+  cursor: pointer;
+}
+
+@media (pointer: fine), (pointer: none) {
+  .restoreShortcut:not(:focus-visible) {
+    clip-path: inset(50%);
+    pointer-events: none;
+  }
+}
+
+.contextMenu {
+  position: fixed;
+  top: clamp(.5rem, var(--menu-y), calc(100% - 4rem));
+  left: clamp(.5rem, var(--menu-x), calc(100% - 10.5rem));
+  z-index: 70;
+  width: 10rem;
+  max-width: calc(100% - 1rem);
+  padding: .25rem;
+  border-radius: .75rem;
+}
+
+.contextMenu button {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: .35rem .65rem;
+  border-radius: .5rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.contextMenu button:is(:hover, :focus) { background: #f0e3f2; }
+.contextMenu button:focus-visible { outline-offset: -2px; }
+
+.wand {
+  position: absolute;
+  bottom: 39%;
+  left: -2.25rem;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: .8rem;
+  pointer-events: auto;
+}
+
+.actor[data-wand-side="right"] .wand { right: -2.25rem; left: auto; scale: -1 1; }
+
+.wandToy {
+  position: relative;
+  width: .16rem;
+  height: 2.15rem;
+  margin: .4rem .4rem 0 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #865267, #c78e9b);
+  box-shadow: 1px 1px 2px #512c5045;
+  transform: rotate(45deg);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+
+.wandToy::before {
+  position: absolute;
+  top: -.78rem;
+  left: -.37rem;
+  width: .9rem;
+  height: 1.42rem;
+  border-radius: 70% 25% 70% 30%;
+  background: linear-gradient(112deg, #ffcdac, #e18baf 65%, #a85d93 67%, #d684ac 80%);
+  box-shadow: inset 0 0 0 1px #ffe5d684, 0 1px 3px #713d7352;
+  content: '';
+}
+
+.wandToy[data-waving="true"] { animation: wave .85s ease-in-out both; }
+
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(.3rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe { 50% { transform: scale(1.01, 1.027); } }
+@keyframes settle { from { transform: translateY(-.15rem) scaleY(1.035); } }
+@keyframes nuzzle { 35% { transform: translateX(-5%) rotate(-4deg); } 70% { transform: translateX(-2%) rotate(-2deg); } }
+@keyframes stretch { 30%, 60% { transform: scale(1.05, .98); } }
+@keyframes nibble { 50% { transform: scaleY(.977) rotate(-.7deg); } }
+@keyframes roll { from { transform: rotate(-13deg) translateX(-4%); } 55% { transform: rotate(5deg); } }
+@keyframes pounce { 34% { transform: translate(-7%, -12%) rotate(-4deg); } 70% { transform: translate(-4%, -3%); } }
+@keyframes grumble { 25%, 70% { transform: translateX(-2%); } 48% { transform: translateX(2%); } }
+@keyframes drift { 50% { opacity: .5; transform: translate(.28rem, -.32rem); } }
+@keyframes wave { 0%, 100% { transform: rotate(45deg); } 35% { transform: rotate(75deg); } 70% { transform: rotate(30deg); } }
+@keyframes walkFrames { 0% { background-position: 0 0; } 50% { background-position: 50% 0; } }
+@keyframes runFrames { 0% { background-position: 100% 0; } 50% { background-position: 0 100%; } }
+@keyframes climbFrames { 0% { background-position: 50% 100%; } 50% { background-position: 100% 100%; } }
+@keyframes purr { 45% { transform: translateY(-.18rem) rotate(-2deg); } }
+@keyframes holdBreathe { 50% { transform: scaleY(1.008); } }
+@keyframes jerryReachBody {
+  0%, 93%, 100% { opacity: 0; }
+  18%, 77% { opacity: 1; }
+}
+
+@keyframes jerryReachArm {
+  0% { opacity: 0; transform: rotate(48deg) scaleX(.47); }
+  18%, 44%, 65% { opacity: 1; transform: rotate(-2deg) scaleX(1); }
+  31%, 57% { opacity: 1; transform: rotate(2.5deg) scaleX(1); }
+  72% { opacity: 1; transform: rotate(-3deg) scaleX(.99); animation-timing-function: cubic-bezier(.35, 0, .36, 1); }
+  83% { opacity: 1; transform: rotate(-11deg) scaleX(.72); }
+  93%, 100% { opacity: 0; transform: rotate(-29deg) scaleX(.41); }
+}
+
+@keyframes jerryFold {
+  0%, 79% { opacity: 0; transform: translate(1.6%, -1%) rotate(-2deg); }
+  89%, 91% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-1.5%, 1.2%) rotate(2.5deg); }
+}
+
+@keyframes jerryScoop {
+  0% { transform: translate(-2%, -2%) rotate(-3deg) scale(.97); }
+  24%, 30% { transform: translate(-1.7%, 2.5%) rotate(5deg) scale(.91); animation-timing-function: ease-in-out; }
+  50%, 100% { transform: translate(-1.5%, -3.5%) rotate(-4.5deg) scale(.96); }
+}
+
+@keyframes jerryReady {
+  0% { transform: translate(-1%, 2%) rotate(3deg); }
+  25% { transform: translate(2%, 0) rotate(2deg); }
+  44% { transform: translate(3%, -2%) rotate(3deg); }
+  50%, 100% { transform: translate(-1.5%, -3.5%) rotate(-4.5deg) scale(.96); }
+}
+
+@keyframes jerryCradle {
+  0%, 55% { transform: translate(-1.5%, -3.5%) rotate(-4.5deg) scale(.96); }
+  71% { transform: translate(.5%, 1%) rotate(-2deg); }
+  76%, 100% { transform: translate(0, 1.8%) rotate(1deg); }
+}
+
+@keyframes jerryStandOpacity {
+  0%, 7% { opacity: 1; }
+  15%, 100% { opacity: 0; }
+}
+
+@keyframes jerryPrepareOpacity {
+  0%, 7%, 55%, 100% { opacity: 0; }
+  15%, 50% { opacity: 1; }
+}
+
+@keyframes jerryCradleOpacity {
+  0%, 50% { opacity: 0; }
+  55%, 100% { opacity: 1; }
+}
+
+@keyframes jerryBeforeHold {
+  0%, 76% { opacity: 1; }
+  81%, 100% { opacity: 0; }
+}
+
+@keyframes jerryHeldOpacity {
+  0%, 76% { opacity: 0; }
+  81%, 100% { opacity: 1; }
+}
+
+@keyframes jerryReceive {
+  0%, 81% { transform: translateY(1.8%) rotate(1deg); animation-timing-function: ease-out; }
+  100% { transform: translateY(0) rotate(0); }
+}
+
+@keyframes catLift {
+  0%, 21% { transform: translate(0, 0) scale(1); }
+  27% { transform: translate(0, 2px) scale(1.025, .95) rotate(-2deg); animation-timing-function: cubic-bezier(.3, 0, .7, .75); }
+  48% { transform: translate(var(--mid-x), var(--mid-y)) scale(.98) rotate(-14deg); }
+  73% { transform: translate(var(--travel-x), var(--catch-y)) scale(var(--end-scale)) rotate(-9deg); animation-timing-function: ease-out; }
+  100% { transform: translate(var(--travel-x), var(--travel-y)) scale(var(--end-scale)) rotate(0); }
+}
+
+@keyframes catLeap {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  18% { transform: translate3d(0, 5px, 0) scale(1.07, .84); animation-timing-function: cubic-bezier(.3, .4, .55, 1); }
+  48% { transform: translate3d(var(--mid-x), var(--mid-y), 0) scale(.96) rotate(-14deg); animation-timing-function: cubic-bezier(.44, .03, .68, .72); }
+  71% { transform: translate3d(var(--travel-x), var(--catch-y), 0) scale(var(--end-scale)) rotate(-4deg); animation-timing-function: ease-out; }
+  100% { transform: translate3d(var(--travel-x), var(--travel-y), 0) scale(var(--end-scale)); }
+}
+
+@keyframes catLeaveGround {
+  0% { opacity: 1; }
+  27%, 100% { opacity: 0; }
+}
+
+@keyframes catInAir {
+  0% { opacity: 0; }
+  27%, 100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .catFrame, .catFrame[data-pose], .dream, .wandToy[data-waving], .jerryHeldArt { animation: none; }
+  .jerryReachMask, .jerryTransferStage { display: none; }
+}

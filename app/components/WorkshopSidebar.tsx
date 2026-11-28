@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import petStyles from './workshop-pet.module.css';
 
 export const WORKSHOP_NAV = [
   { href: '/about', label: '关于我', caption: 'ABOUT' },
@@ -17,7 +18,7 @@ export default function WorkshopSidebar({ variant = 'home' }: { variant?: 'home'
       <div className="corner-screw bl" />
       <div className="corner-screw br" />
 
-      <div className="h-[200px] overflow-hidden lg:h-auto lg:flex-1">
+      <div className={`${petStyles.jerryPortrait} relative h-[200px] overflow-hidden lg:h-auto lg:flex-1`} data-jerry-portrait>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={home ? '/profile-animated.gif' : '/profile.png'} alt="Jerry" className="h-full w-full select-none object-contain object-top lg:object-cover" />
       </div>
